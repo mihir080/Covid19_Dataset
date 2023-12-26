@@ -1,0 +1,118 @@
+```{r}
+#### Getting and installing the required packages 
+
+# install.packages(c("tidyverse", "dplyr", "ggplot2", "scales", "RColorBrewer", "ggthemes", "gridExtra", "ggrepel", "lubridate","cowplot"))
+
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(RColorBrewer)
+library(ggthemes)
+library(gridExtra)
+library(ggrepel)
+library(lubridate)
+library(cowplot)
+```
+
+Cleaning the Dataset
+
+```{R}
+
+#### Reading the dataset into R
+dataset <- read.csv("D:/Mihir Docs UMD/Python/gITHUB/Covid'19/covid_19_data.csv/covid_19_data.csv")
+
+#### Keeping relevant coloumns
+dataset <- dataset[, c(1, 2, 4, 6, 7, 8)]
+names(dataset)[1] <- "ID"
+
+#### Checking the dataset
+head(dataset, 5)
+
+#### Creating an observation Date
+dataset$Date <- as.Date(dataset$ObservationDate, format = "%m/%d/%Y")
+
+#### Grouping the countries by continents for further study
+##### Creating country groups
+
+asia <- c("Japan", "Mainland China", "India", "Pakistan", "Hong Kong", "Macau", "South Korea ", "Taiwan", 
+    "Thailand", "Singapore", "Vietnam", "Malaysia", "Nepal", "Cambodia", "Sri Lanka", "Philippines", 
+    "United Arab Emirates", "Iran", "Isreal", "Lebanon", "Iraq", "Afghanistan", "Bahrain", "Kuwait", 
+    "Oman", "Georgia", "Qatar", "Armenia", "Azerbaijan", "Indonesia", "Saudi Arabia", "Jordan", "Bhutan", 
+    "Bangladesh", "Bangladesh", "Brunei", "Mongolia", "Turkey", "Kazakhstan", "Uzbekistan", "Kyrgyzstan", "Nicaragua", 
+    "Syria", "Timor-Leste", "Laos", "Burma", "Tajikistan")
+
+africa <- c("Egypt", "Algeria", "Nigeria", "Morocco", "Senegal", "Tunisia", "South Africa", "Cameroon", "Togo", "Burkina Faso", 
+        "Ivory Coast", "Congo (Kinshasa)", "Ethiopia", "Guinea", "Kenya", "Sudan", "Eswatini", "Gabon", "Ghana", "Mauritania",
+        "Namibia", "Rwanda", "Trinidad and Tobago", "Central African Republic", "Congo (Brazzaville)", "Equatorial Guinea",
+        "Benin", "Liberia", "Somalia", "Tanzania", "Barbados", "Djibouti", "Mauritius", "Zambia", "Chad", "Angola", "Cabo Verde",
+        "Madagascar", "Niger", "Papua New Guinea", "Zimbabwe", "Eritrea", "Uganda", "Gambia", "Mozambique", "Samoa", "Libia",
+        "Guinea-Bissau", "Mali", "Botswana", "Burundi", "Sierra Leone", "Malawi", "South Sudan", "Yemen")
+
+europe <- c("Russia", "Ukraine", "Italy", "Spain", "Sweden", "Germany", "UK", "Netherlands", "France", 
+         "Belgium", "Denmark", "Finland", "Austria", "Croatia", "Switzerland", "Greece", "North Macedonia",
+         "Norway", "Romania", "Estonia", "San Marino", "Belarus", "Iceland", "Lithuania", "Ireland",
+         "Luxemburg", "Monaco", "Czech Republic", "Andorra", "Latvia", "Portugal", "Liechtenstein",
+         "Hungary", "Poland", "Bosnia and Herzegovina", "Slovenia", "Serbia", "Slovakia", "Malta",
+         "Bulgaria", "Moldova", "Albania", "Cyprus", "Holy See", "Montenegro", "Kosovo", "Gibraltar")
+
+northamerica <- c("US", "Canada", "Dominican Republic", "Costa Rica", "Panama", "Jamaica", "Cuba", "Antigua and Barbuda", "Mexico",
+                "Saint Lucia", "El Salvador", "Haiti", "Bahamas")
+
+southamerica <- c("Colombia", "Brazil", "Peru", "Chile", "Ecuador", "Argentina", "Paraguay", "Bolivia", "Guyana", "Guatemala", "Uruguay",
+                "Venezuela")
+
+dataset$Continent <- 0
+dataset <- dataset %>%
+    mutate(Continent = case_when(Country.Region %in% asia ~ "Asia",
+                            Country.Region %in% africa ~ "Africa",
+                            Country.Region %in% europe ~ "Europe",
+                            Country.Region %in% northamerica ~ "North America",
+                            Country.Region %in% southamerica ~ "South America"))
+
+##### Checking the values in Continent
+unique(dataset$Continent)
+head(dataset, 5)
+
+dataset <- dataset[complete.cases(dataset$Continent), ]
+
+dataset <- dataset[dataset$Continent!=0, ]
+
+dataset <- dataset[, -2]
+
+head(dataset, 5)
+
+dataset$isWeekend <- ifelse(weekdays(dataset$Date) %in% c("Saturday", "Sunday"), "Weekend", "Weekday")
+dataset$WeekOfYear <- isoweek(dataset$Date)
+dataset$WeekDay <- weekdays(dataset$Date)
+
+head(dataset, 5)
+```
+
+```{r}
+
+#### Checking the dataset and sample 
+
+set.seed(100)
+
+headordered <- dataset[sample(1:nrow(dataset), 5), ]  
+
+headordered
+
+headordered <- headordered[order(headordered$ID), ]
+
+headordered
+```
+
+```{r}
+
+#### Plotting the spread of virus by continent
+
+Conf <- dataset %>%
+    group_by(Continent, Date) %>%
+    summarise(x = sum(Confirmed), .groups = 'drop')
+
+ggplot(Conf, aes(Date, x, colour = Continent))+
+  geom_line(size = 1.7, alpha = 0.9)
+
+```
